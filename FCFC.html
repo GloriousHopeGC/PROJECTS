@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>FCFS Scheduler with Gantt Chart</title>
+</head>
+<body style="background: linear-gradient(to right, rgb(24, 200, 89), rgb(2, 47, 47));;">
+
+<div class="container mt-5">
+    <h2 class="mb-4 text-center text-white" >FCFS ALGORITHM</h2>
+<div class="row">
+    <div class="col-4"></div>
+    <div class="col-7" style="margin-left: 110px;">
+            <label for="processCount" class="form-label text-white">Number of Processes:</label>
+            <input type="number" class="form-control w-25 mb-3" id="processCount" min="1" required>
+            <button class="btn btn-success" onclick="generateManualInputs()">Add Process</button>
+            <div id="manualInputs" class="mt-4"></div>
+            <button class="btn btn-success mt-3" onclick="calculate()">Start Calculate</button>
+    </div>
+</div>
+    <div id="results" class="mt-4"></div>
+
+    <div class="mt-4">
+        <h4 class="text-white">Ready Queue</h4>
+        <div id="readyQueue" class="text-white"></div>
+    </div>
+
+    <div class="mt-4">
+        <h4 class="text-white">Gantt Chart</h4>
+        <div id="ganttChartContainer" class="text-white"></div>
+    </div>
+</div>
+
+<script>
+    function generateManualInputs() {
+        const processCount = document.getElementById('processCount').value;
+        const manualInputsDiv = document.getElementById('manualInputs');
+
+        let manualInputsHTML = '';
+        for (let i = 1; i <= processCount; i++) {
+            manualInputsHTML += `
+       
+                    <div class="row">
+                       <div class="col-5"> 
+                            <label for="arrivalTime${i}" class="form-label text-center text-white">Arrival Time P${i}:</label>
+                            <input type="number" class="form-control w-25 text-center" id="arrivalTime${i}" min="0" required>
+                        </div>
+                        <div class="col-5"> 
+                            <label for="burstTime${i}" class="form-label text-center text-white">Burst Time P${i}:</label>
+                            <input type="number" class="form-control w-25 text-center" id="burstTime${i}" min="1" required>
+                        </div>    
+                    </div>    
+              `;
+        }
+        manualInputsDiv.innerHTML = manualInputsHTML;
+    }
+
+    function calculate() {
+        const processCount = document.getElementById('processCount').value;
+        const resultsDiv = document.getElementById('results');
+        const ganttChartContainer = document.getElementById('ganttChartContainer');
+        const readyQueueDiv = document.getElementById('readyQueue');
+
+        let processes = [];
+        for (let i = 1; i <= processCount; i++) {
+            const arrivalTime = document.getElementById(`arrivalTime${i}`).value;
+            const burstTime = document.getElementById(`burstTime${i}`).value;
+            processes.push({ id: i, arrivalTime: parseInt(arrivalTime), burstTime: parseInt(burstTime) });
+        }
+
+        processes.sort((a, b) => a.arrivalTime - b.arrivalTime);
+
+        let currentTime = 0;
+        let totalTAT = 0;
+        let totalWT = 0;
+        let totalRT = 0;
+
+        let resultsHTML = '<h4 class="text-white">Results:</h4>';
+        resultsHTML += '<table class="table table-bordered bg-success text-white"><thead><tr><th>Process</th><th>CT</th><th>TAT</th><th>WT</th><th>RT</th></tr></thead><tbody>';
+
+        let ganttChartHTML = '<div class="gantt-chart">';
+        ganttChartHTML += '<div class="gantt-bar">0</div>';
+
+        let readyQueueHTML = '<div class="d-flex">';
+        readyQueueHTML += '<div class="me-2">Ready Queue:</div>';
+
+        processes.forEach(process => {
+            const arrivalTimeDiff = Math.max(currentTime, process.arrivalTime) - currentTime;
+            currentTime = Math.max(currentTime, process.arrivalTime);
+            const completionTime = currentTime + process.burstTime;
+
+            const turnaroundTime = completionTime - process.arrivalTime;
+            const waitingTime = Math.max(0, currentTime - process.arrivalTime);
+            const responseTime = waitingTime;
+
+            totalTAT += turnaroundTime;
+            totalWT += waitingTime;
+            totalRT += responseTime;
+
+            resultsHTML += `
+                <tr>
+                    <td>${process.id}</td>
+                    <td>${completionTime}</td>
+                    <td>${turnaroundTime}</td>
+                    <td>${waitingTime}</td>
+                    <td>${responseTime}</td>
+                </tr>`;
+
+            ganttChartHTML += `<div class="gantt-bar">${completionTime} P${process.id}</div>`;
+
+            readyQueueHTML += `<div class="me-2">P${process.id}</div>`;
+
+            currentTime = completionTime;
+        });
+
+        resultsHTML += '</tbody></table>';
+        resultsHTML += `<p class="text-white">Average Turn Around Time: ${totalTAT / processCount}</p>`;
+        resultsHTML += `<p class="text-white">Average Waiting Time: ${totalWT / processCount}</p>`;
+        resultsHTML += `<p class="text-white">Average Response Time: ${totalRT / processCount}</p>`;
+
+        ganttChartHTML += '</div>';
+        ganttChartContainer.innerHTML = ganttChartHTML;
+
+        resultsDiv.innerHTML = resultsHTML;
+        readyQueueHTML += '</div>';
+        readyQueueDiv.innerHTML = readyQueueHTML;
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-mQ93GR66B00ZXjt0YO5KlohRA5SY2XofN4zfuWdA1RH3uWq1u5XsA0M2GIu2Px" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js" integrity="sha384-eNpNbXWH00i6IV4BcfAq4vH2F2Rk5MA4/4dikM82BmHvCQ7aDZ4FCqEbZl2A95b3" crossorigin="anonymous"></script>
+
+</body>
+</html>
